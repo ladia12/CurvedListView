@@ -38,49 +38,37 @@ public class MainActivity extends AppCompatActivity implements ObservableScrollV
 
     @Override
     public void onScrollChanged(int scrollY, boolean firstScroll, boolean dragging) {
-//        Log.d("Logger",scrollY+"");
         int count = mListView.getChildCount();
-        int midCount = count/2;
-        if(count % 2 == 0){
-            midCount--;
-        }
+
+        int heightList = mListView.getHeight();
+        int midPoint = heightList/2;
 
         for(int i=0;i<count; i++){
 
             View c = mListView.getChildAt(i);
+            float posC = c.getY();
+
+            float maxTextSize = 32f;
+            float minTextSize = 15f;
 
             float height = c.getHeight();
-            float offset = (scrollY % height)/height;
-            Log.d("Logger"+i, offset+"");
-            float stepOffset = midCount - (i);
-
-            float scale = (1 - (1+Math.abs(stepOffset))/count);
-            float translation = 0f;
-            float textSize = 32 * scale;
-
-            if(stepOffset >= 0){
-                textSize = textSize - offset*3;
-            }else{
-                textSize = textSize + offset*3;
-            }
-
-            stepOffset = Math.abs(stepOffset);
-
+            float diffFromMid = Math.abs(midPoint - posC);
+            float textSize = maxTextSize - diffFromMid/(midPoint+height-1)*(maxTextSize - minTextSize);
             TextView textView = (TextView) c.findViewById(android.R.id.text1);
             textView.setTextSize(textSize);
 
-            if(i == midCount){
+            float maxTranslation = 150f;
+            float minTranslation = 0f;
+            float translation = maxTranslation - diffFromMid/(midPoint+height-1)*(maxTranslation - minTranslation);
+            textView.setTranslationX(translation);
+
+            float minRange = (heightList - height)/2;
+            float maxRange = (heightList + height)/2;
+            if(posC >= minRange && posC <= maxRange){
                 textView.setTextColor(getResources().getColor(R.color.colorPrimary));
             } else{
                 textView.setTextColor(Color.BLACK);
             }
-            if((midCount %2 !=0 && stepOffset == midCount-1) || stepOffset == midCount){
-                translation = 0;
-            } else {
-                translation = 100 - (100/midCount)*stepOffset;
-            }
-            textView.setTranslationX(translation);
-
         }
     }
 
