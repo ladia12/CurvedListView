@@ -10,69 +10,87 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.github.ksoichiro.android.observablescrollview.ObservableListView;
+import com.github.ksoichiro.android.observablescrollview.ObservableScrollViewCallbacks;
+import com.github.ksoichiro.android.observablescrollview.ScrollState;
+
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ObservableScrollViewCallbacks {
 
-    private CurvedListView mListView;
+    private ObservableListView mListView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mListView = (CurvedListView) findViewById(R.id.listView);
+        mListView = (ObservableListView) findViewById(R.id.listView);
+        mListView.setScrollViewCallbacks(this);
 
-        String[] values = {"Music", "Fitness", "Store", "Apps", "Settings","Music",
-                "Fitness", "Store", "Apps", "Settings", "Music", "Fitness", "Store", "Apps", "Settings","Music",
+        String[] values = {"Music", "Fitness", "Store", "Apps", "Settings", "Music",
+                "Fitness", "Store", "Apps", "Settings", "Music", "Fitness", "Store", "Apps", "Settings", "Music",
                 "Fitness", "Store", "Apps", "Settings"};
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_list_item_1, android.R.id.text1, values);
         mListView.setAdapter(adapter);
+    }
 
+    @Override
+    public void onScrollChanged(int scrollY, boolean firstScroll, boolean dragging) {
+//        Log.d("Logger",scrollY+"");
+        int count = mListView.getChildCount();
+        int midCount = count/2;
+        if(count % 2 == 0){
+            midCount--;
+        }
 
-        mListView.setOnScrollListener(new AbsListView.OnScrollListener() {
-            @Override
-            public void onScrollStateChanged(AbsListView absListView, int i) {
+        for(int i=0;i<count; i++){
+
+            View c = mListView.getChildAt(i);
+
+            float height = c.getHeight();
+            float offset = (scrollY % height)/height;
+            Log.d("Logger"+i, offset+"");
+            float stepOffset = midCount - (i);
+
+            float scale = (1 - (1+Math.abs(stepOffset))/count);
+            float translation = 0f;
+            float textSize = 32 * scale;
+
+            if(stepOffset >= 0){
+                textSize = textSize - offset*3;
+            }else{
+                textSize = textSize + offset*3;
             }
 
-            @Override
-            public void onScroll(AbsListView absListView, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+            stepOffset = Math.abs(stepOffset);
 
-                Log.d("Position", "first"+firstVisibleItem+" visibleitemcount"+visibleItemCount+" total"+totalItemCount);
-                int count = absListView.getChildCount();
-                Log.d("ChildCount" , ""+ count);
-                int midCount = count/2;
-                if(count % 2 == 0){
-                    midCount--;
-                }
+            TextView textView = (TextView) c.findViewById(android.R.id.text1);
+            textView.setTextSize(textSize);
 
-                for(int i=0;i<count; i++){
-                    float offset = Math.abs(midCount - (i));
-                    Log.d("Offset", offset+"");
-                    float scale = (1 - (1+offset)/count);
-                    float translation = 0f;
-                    float textSize = 32 * scale;
-                    View c = absListView.getChildAt(i);
-                    TextView textView = (TextView) c.findViewById(android.R.id.text1);
-                    textView.setTextSize(textSize);
-
-                    if(i == midCount){
-                        textView.setTextColor(getResources().getColor(R.color.colorPrimary));
-                    } else{
-                        textView.setTextColor(Color.BLACK);
-                    }
-                    if((midCount %2 !=0 && offset == midCount-1) || offset == midCount){
-                        translation = 0;
-                    } else {
-                        translation = 100 - (100/midCount)*offset;
-                    }
-                    textView.setTranslationX(translation);
-
-                }
-
+            if(i == midCount){
+                textView.setTextColor(getResources().getColor(R.color.colorPrimary));
+            } else{
+                textView.setTextColor(Color.BLACK);
             }
-        });
+            if((midCount %2 !=0 && stepOffset == midCount-1) || stepOffset == midCount){
+                translation = 0;
+            } else {
+                translation = 100 - (100/midCount)*stepOffset;
+            }
+            textView.setTranslationX(translation);
+
+        }
+    }
+
+    @Override
+    public void onDownMotionEvent() {
+
+    }
+
+    @Override
+    public void onUpOrCancelMotionEvent(ScrollState scrollState) {
 
     }
 }
